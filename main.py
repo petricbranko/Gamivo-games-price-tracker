@@ -28,11 +28,12 @@ for link in links:
     page = requests.get(link, headers=headers)
     soup = BeautifulSoup(page.content, 'html.parser')
     price = soup.find("div", {"class": "price lowest-price"}).get_text()
+    smart_price = soup.findAll("div", {"class": "price lowest-price"})[1].get_text()
     converted_price = float(price[2:])
     title = soup.title.string[3:]
 
     # print game prices
-    print("Name: " + title + " | Price: " + '\033[91m' + price + '\033[0m')
+    print("Name: " + title + " | Smart Price: " + '\033[91m' + smart_price + '\033[0m' +" " + price)
 
     # save data in database
     try:
@@ -40,7 +41,7 @@ for link in links:
                     (Name, Price) VALUES(?, ?)''', 
                     (title, converted_price))
         conn.commit()
-        
+
     # update data if game is in database
     except sqlite3.IntegrityError:
         cur.execute('''UPDATE Games
@@ -51,5 +52,6 @@ for link in links:
                         (converted_price,title)
         )
         conn.commit()
+        
 
     
