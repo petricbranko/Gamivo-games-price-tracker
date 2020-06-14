@@ -1,1 +1,1 @@
-# Track game prices on Gamivo.com
+<h1 align='center'> Track game prices on Gamivo.com</h1>
