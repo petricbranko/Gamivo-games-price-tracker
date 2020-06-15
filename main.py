@@ -9,7 +9,9 @@ cur = conn.cursor()
 # create table Games
 cur.execute('''CREATE TABLE IF NOT EXISTS Games(
     Name TEXT PRIMARY KEY,
-    Price REAL
+    Price REAL,
+    Smart_Price REAL,
+    Other_Price REAL
 ) ''')
 
 # game links to get prices
@@ -30,26 +32,37 @@ for link in links:
     price = soup.find("div", {"class": "price lowest-price"}).get_text()
     smart_price = soup.findAll("div", {"class": "price lowest-price"})[1].get_text()
     converted_price = float(price[2:])
+    converted_price_smart = float(smart_price[2:])
     title = soup.title.string[3:]
 
-    # print game prices
-    print("Name: " + title + " | Smart Price: " + '\033[91m' + smart_price + '\033[0m' +" " + price)
+    prices = []
+    offers = soup.find("table", {"class": "table"})
+    td = offers.findChildren("td", {"class": "price"})
+    for child in td:
+        convert_price = float(child.get_text()[2:])
+        prices.append(convert_price)
+    
+
+    # print game lowest prices
+    print("Name: " + title + " | Smart Price: " + '\033[91m' + smart_price + '\033[0m' +"| Price: " + price + "| Other offers: " + str(min(prices)))
 
     # save data in database
     try:
         cur.execute('''INSERT INTO Games 
-                    (Name, Price) VALUES(?, ?)''', 
-                    (title, converted_price))
+                    (Name, Price, Smart_Price, Other_Price) VALUES(?, ?, ?, ?)''', 
+                    (title, converted_price, converted_price_smart, min(prices)))
         conn.commit()
 
     # update data if game is in database
     except sqlite3.IntegrityError:
         cur.execute('''UPDATE Games
                        SET 
-                        Price = (?)
+                        Price = (?),
+                        Smart_Price = (?),
+                        Other_Price = (?)
                        WHERE 
                         Name = (?) ''',
-                        (converted_price,title)
+                        (converted_price,converted_price_smart,min(prices),title)
         )
         conn.commit()
         
